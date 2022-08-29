@@ -1,0 +1,452 @@
+---
+title: "SMM Coursework"
+author: "Weicheng YU"
+date: "5/10/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+## Introduction
+
+In this analysis we use the data of credit scores of 1000 individuals,together with the values of 20 explanatory variables for each individuals,to build and chose models to explore the association between credit score and the other explanatory variables, and to predict credit scores based on the chosen models.
+
+## Exploratory analysis
+
+The data set consists the credit score(in CreditScore) of 1000 individules(800 for model built and chosen and 200 for prediction),together with the values of 20 explnantory variables for each individual:
+
+Status;
+Duration;
+History;
+Purpose;
+Amount;
+Savings;
+Employment;
+Disposable;
+Personal;
+OtherParties;
+Residence;
+Property;
+Age;
+Plans;
+Housing；
+Existing;
+Job;
+Dependants;
+Telephone;
+Foreign.
+
+Status,History,Purpose,Savings,Employment,Personal,OtherParties,Property,Plan,Housing,Job,Telephone and Foreign should clearly be treadted as categorical variables(factors).We will also treat Disposable,Residence,Existing and Dependants as facotrs,because the samll number of distict possibilities these can take.
+```{r,echo=FALSE}
+Train<-read.table("Train.txt",header=T)
+Test<-read.table("Test.txt",header=T)
+library(ggplot2)
+NewData<-Train
+NewData$Status<-factor(NewData$Status)
+NewData$History<-factor(NewData$History)
+NewData$Purpose<-factor(NewData$Purpose)
+NewData$Savings<-factor(NewData$Savings)
+NewData$Employment<-factor(NewData$Employment)
+NewData$Disposable<-factor(NewData$Disposable)
+NewData$Personal<-factor(NewData$Personal)
+NewData$OtherParties<-factor(NewData$OtherParties)
+NewData$Residence<-factor(NewData$Residence)
+NewData$Property<-factor(NewData$Property)
+NewData$Plans<-factor(NewData$Plans)
+NewData$Housing<-factor(NewData$Housing)
+NewData$Existing<-factor(NewData$Existing)
+NewData$Job<-factor(NewData$Job)
+NewData$Dependants<-factor(NewData$Dependants)
+NewData$Telephone<-factor(NewData$Telephone)
+NewData$Foreign<-factor(NewData$Foreign)
+```
+
+The following plot shows the scatter plot matrix of each of the continuous measurements.
+```{r,echo=FALSE}
+library(car)
+scatterplotMatrix(NewData[,c(2,5,13,21)],main='Scatter Plot Matrix')
+```
+
+The plot above shows some relationships between two varibles and the distributions above have skewness which can help the variable transformation.
+
+Then we can discuss about the relationship between Credit Score and other continuous measurement and make the variable transformation according to the skewed distributions. The distribution of CreditScore is normal,thus we do not need to make trasformation on it.However,we should note that there is some correlation between theese potrntial explanatory variables. For instance,the individuals with longer duration of requested loan in months have more amount requested in Euros.
+
+1)To be more specific,we use the histogram to show the distribution of the varible more clearly.According to the general distribution in Scatter Plot Matrix,the distibution of Duration is a positive skew.Hence we can descending the ladder of powers towards log(Durantion) to correct the skewness.
+
+```{r,echo=FALSE}
+par(mfrow=c(1,2))
+hist(NewData$Duration,xlab='Duration',main='Histogram of Duration')
+hist(log(NewData$Duration),xlab='log(Duration)',main="Hitogram of log(Duration)")
+```
+
+Comparing the two histograms, after transforming the varible to log(Durantion),the skew moves to right.Then we could find the relationship between the CreditScore and Duration.
+
+```{r,echo=FALSE}
+qplot(Duration,CreditScore,data=NewData,geom=c("point"))+stat_smooth(method="lm")
+qplot(log(Duration),CreditScore,data=NewData,geom=c("point"))+stat_smooth(method="lm")
+```
+
+According to the figures, generally,individuals with lower log(Duration) have higher values of CreditScore.
+
+2)Similarly,the distribution of Amount is obviously positive skew. So we try log transformation again.
+
+```{r,echo=FALSE}
+par(mfrow=c(1,2))
+hist(NewData$Amount,xlab='Amount',main='Histogram of Amount')
+hist(log(NewData$Amount),xlab='log(Amount)',main="Hitogram of log(Amount)")
+```
+
+The log transformation corrects the positive skew.Then we analyse the association between Amount and CreditScore.
+```{r,echo=FALSE}
+qplot(Amount,CreditScore,data=NewData,geom=c("point"))+stat_smooth(method="lm")
+qplot(log(Amount),CreditScore,data=NewData,geom=c("point"))+stat_smooth(method="lm")
+```
+
+From the figure, log(Amount) is weakly associated with CreditScore.Generally,individuals with lower log(Amount) have higher values of CreditScore.
+
+3)The distribution of Age also has the positive skew.Hence,we use log transformation again
+
+```{r,echo=FALSE}
+par(mfrow=c(1,2))
+hist(NewData$Age,xlab='Age',main='Histogram of Age')
+hist(log(NewData$Age),xlab='log(Age)',main="Hitogram of log(Age)")
+```
+
+The skewness is corrected a little.Then we find out the relation ship between Age and CreditScore.
+```{r,echo=FALSE}
+qplot(Age,CreditScore,data=NewData,geom=c("point"))+stat_smooth(method="lm")
+qplot(log(Age),CreditScore,data=NewData,geom=c("point"))+stat_smooth(method="lm")
+```
+
+The figures show that Creditscore has a weak positive relationship with age.
+
+4)We now consider the factor variables and draw the boxplots.
+```{r,fig.width=8,fig.height=8,echo=FALSE}
+par(mfrow=c(3,6))
+boxplot(NewData$CreditScore~NewData$Status,xlab="Status",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$History,xlab="History",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Purpose,xlab="Purpose",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Savings,xlab="Savings",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Employment,xlab="Employment",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Disposable,xlab="Disposable",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Personal,xlab="Personal",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$OtherParties,xlab="Otherparties",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Residence,xlab="Full years in current residence",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Property,xlab="Property",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Plans,xlab="Plans",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Housing,xlab="Housing",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Existing,xlab="Existing",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Job,xlab="Job",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Dependants,xlab="Number of dependants",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Telephone,xlab="Telephone",ylab="CreditScore")
+boxplot(NewData$CreditScore~NewData$Foreign,xlab="Foreign",ylab="CreditScore")
+```
+
+According to the boxplots,the following factors seem to have no obvious relationship with CreditScore:Disposable,full years in current residence,current job,number of dependants and having registered telephone or not.Almost all of other variables have some relationships with CreditScore.Nevertheless,this judgment is just based on our eyeballs and not so convincing and we need further analysis.It also should be noticed that there is lots of correlation between these varibales and continuous ones.For example, foreign applicant has longer duration of requested loan,as the following plot shows
+
+```{r,echo=FALSE}
+boxplot(NewData$Duration~NewData$Foreign,xlab="Foreign",ylab="Duration")
+```
+
+## Model selection
+
+Construct new data according to the exploratory analysis.
+
+```{r,echo=FALSE}
+NewData2<-NewData
+NewData2$Duration=log(NewData$Duration)
+NewData2$Amount=log(NewData$Amount)
+NewData2$Age=log(NewData$Age)
+```
+
+We use the stepwise regression to select model since the number of input variables is very large. In stepwise regression part,Duration represents log(Duration),Amount represents log(Amount),Age represents log(Age).
+
+We try backward regression first.
+```{r,echo=FALSE}
+fit<-lm(CreditScore~.,data=NewData2)
+fit_step1<-step(fit)
+```
+
+Then we try forward regression
+```{r,echo=FALSE}
+fit0<-lm(CreditScore~1,data=NewData2)
+fit_step2<-step(fit0,scope=CreditScore~Status + Duration + History + Purpose + Amount + Savings + Employment + Disposable + Personal + OtherParties + Residence + Property + Age + Plans + Housing + Existing + Job + Dependants + Telephone + Foreign)
+```
+
+The result of forward regression is the same as backward regression.From the stepwise regression,we could try the model CreditScore~status+log(Duration)+History+Purpose+log(Amount)+Savings+Disposable+Personal+OtherParties+log(Age)+Plans+Housing+Telephone+Foreign
+```{r,echo=FALSE}
+fit1<-lm(CreditScore~Status + log(Duration) + History + Purpose + log(Amount) + Savings + Disposable + Personal + OtherParties + log(Age) + Plans + Housing + Telephone + Foreign, data=NewData)
+summary(fit1)
+```
+
+All the continuous variables and the factors in fit1 are significant(p-value<0.05) or effective(all factors have some levels with p-value<0.05) as the t-statisitc table above shows. Hence the model fit1 seems good.
+
+## Diagnostic checks
+
+1)Check the assumption and test whether error normally distributed.
+
+We first use the QQ-plot and the histogram of residuals to check is there any skewness existing in our assumption model
+```{r,echo=FALSE}
+par(mfrow=c(1,2))
+qqPlot(fit1)
+hist(rstudent(fit1))
+```
+
+Both the QQ-plot and the histogram look good.For QQ-plot,the points mostly fall on or near the diagonal line and almost in the confident interval. The histogram of the residuals is approximately normal distributed. Therefore,there is almost no skewness so we do not need to do anything to correct it.The error is approximately normal distributed and the little skewness here will not effect the result a lot.
+
+Then we check the residual plots
+
+```{r,echo=FALSE}
+fit1<-lm(CreditScore~Status + log(Duration) + History+Purpose+log(Amount)+Savings + Disposable + Personal + OtherParties +log(Age) + Plans + Housing + Telephone + Foreign, data=NewData)
+residualPlots(fit1,terms=~log(Duration)+log(Amount)+log(Age) ,tests=FALSE)
+```
+
+The residual plots of log(Duration),log(Age) and fitted values is accaptable since there is no correlation in the residuals in these plots and the points are roughly around the residuals=0.The residual plot of log(Amount) is also almost accaptable,but there is a little correlation in the residuals and the trend is non-monotonic.
+
+To get the further conclusion,we need to get the Component-Plus-Residual Plots
+
+```{r,echo=FALSE}
+crPlots(fit1,term=~log(Duration)+log(Amount)+log(Age))
+```
+
+All the Component-Plus-Residual plots show the approximately monotonic linear  relationship.It is accaptable. Combining the conclusion of the residual plot, we could try adding quadratic term of log(Amount).
+
+```{r,echo=FALSE}
+fit2<-lm(CreditScore~Status +log(Duration) + History+Purpose+log(Amount)+I((log(Amount))^2)+Savings + Disposable + Personal + OtherParties +log(Age) + Plans + Housing + Telephone + Foreign, data=NewData)
+residualPlots(fit2,terms=~log(Duration)+log(Amount)+I((log(Amount))^2)+log(Age) ,tests=FALSE)
+crPlots(fit2,term=~log(Duration)+log(Amount)+I((log(Amount))^2)+log(Age))
+```
+
+After having some changes to fit1,all the residual plots is acceptable and the points in all plots have no decernible trend btween the residual and the fitted value or between the residual and the covariates.All the Component-Plus-Residual plots still show the  monotonic linear relationship and the line in plot is straighter than before.Hence the assumptions for linear regression are satisfied and the change in fit1 is accaptable.The changed fit1 is called fit2
+
+Now check the summary of fit2. CreditScore~status+log(Duration)+History+Purpose+log(Amount)+I((log(Amount))^2)+Savings+Disposable+Personal+OtherParties+log(Age)+Plans+Housing+Telephone+Foreign
+
+```{r,echo=FALSE}
+summary(fit2)
+```
+
+All the variables (including factor variables) in the fit2 are significant.Therefore,the best model now is fit2.
+
+2)Unusual and influential data
+We need to test whether there are some unusual and influential observations which can affect the result.
+
+```{r,echo=FALSE}
+influencePlot(fit2)
+influenceIndexPlot(fit2)
+```
+
+From the test above.The abosolute values of studentize residuals of no.272 ,no.325,no.611 and no.639 are bigger than 2. Hence,no.272,no325,no.611 and no.639 can be considered as outliers.
+
+If the hat value is bigger than 2p/n=2*16/800=0.04,then the point is high leverage.Terefore,no.137,no.208,no.325 and no.611 are high leverage points.
+
+According to the conclusion above,no.325 and no.611 are both outliers and high leverage points.The Cook's Distances of them are also the largest.So they are the most influential observations.
+
+We can first try to delete no.272 which have the highest absolute value of studentize residuals.
+
+```{r,echo=FALSE}
+library(dplyr)
+fit3<-update(fit2,subset=rownames(NewData)!="272")
+compareCoefs(fit2,fit3)
+summary(fit3)
+```
+
+The coefficients of the model do not have obvious change.However,the log(Age) become more significant after deleting the no.272.We can check the point no.272.His or her age is 34 which is not old but his or her credit score is 751.4717 which is very high.According to the exploratory analysis, older individuals roughly have more credit scores.Although this relationship is not very strong, it may be the reason why the significance of log(Age) increases after removing this outliers.Therefore,I think we should delete no.272 because it may affect the final result.The model without no.272 is fit3.
+
+Then we pay attention to the most influencial points no.611 and no.325.We can try to remove no.611 first.
+
+```{r,echo=FALSE}
+fit4<-update(fit2,subset=!(rownames(NewData)%in%c("272","611")))
+compareCoefs(fit2,fit3,fit4)
+summary(fit4)
+```
+
+The coefficients of the model still do not have abvious change.Looking at the no.611, we find the values of the variables of him or her are generally suitable. This individual is not the one that bucks the general trend.Therefore, I cannot delete this point and do not keep the model fit4 which no.611 and no.272 are removed.
+
+Then we remove another most influential point no.325.
+
+```{r,echo=FALSE}
+fit5<-update(fit2,subset=!(rownames(NewData)%in%c("272","325")))
+compareCoefs(fit2,fit3,fit5)
+summary(fit5)
+```
+
+After deleting no.325, the coefficient of the model have some changes such as the coefficient of log(Amount) changes from 107.4 in fit3 to 100.8. Focusing on the no.325,we find that he or she has extremely large amount requested. Hence this individual is very abnormal and unrepresentative.I think I can remove it.The model removed no.272 and no.325 is called fit5
+
+## Predict the credit score of the individuals in the Test
+
+We use the best model to make the prediction.fit2,fit3 (no.272 removed) fit5 (no.272,no.325 removed) can be used for the prediction. We also need a fit0 as a full model to be compared with.
+Firstly we use the mean-square error(MSE) as a criteria to judge the quality of the model
+
+```{r,echo=FALSE}
+TestData<-Test
+TestData$Status<-factor(TestData$Status)
+TestData$History<-factor(TestData$History)
+TestData$Purpose<-factor(TestData$Purpose)
+TestData$Savings<-factor(TestData$Savings)
+TestData$Employment<-factor(TestData$Employment)
+TestData$Disposable<-factor(TestData$Disposable)
+TestData$Personal<-factor(TestData$Personal)
+TestData$OtherParties<-factor(TestData$OtherParties)
+TestData$Residence<-factor(TestData$Residence)
+TestData$Property<-factor(TestData$Property)
+TestData$Plans<-factor(TestData$Plans)
+TestData$Housing<-factor(TestData$Housing)
+TestData$Existing<-factor(TestData$Existing)
+TestData$Job<-factor(TestData$Job)
+TestData$Dependants<-factor(TestData$Dependants)
+TestData$Telephone<-factor(TestData$Telephone)
+TestData$Foreign<-factor(TestData$Foreign)
+
+TestResponses<-select(TestData,CreditScore)
+
+prediction2<-predict(fit2,select(TestData,-CreditScore))
+fit2_mse<-sum((prediction2-TestResponses)^2)/200
+print(sprintf("fit2_mse=%f",fit2_mse))
+
+prediction3<-predict(fit3,select(TestData,-CreditScore))
+fit3_mse<-sum((prediction3-TestResponses)^2)/200
+print(sprintf("fit3_mse=%f",fit3_mse))
+
+prediction5<-predict(fit5,select(TestData,-CreditScore))
+fit5_mse<-sum((prediction5-TestResponses)^2)/200
+print(sprintf("fit5_mse=%f",fit5_mse))
+```
+
+Comparing the MSE of fit2,fit3 and fit5,fit5 has the minimun mean-squared value.Hence fit5 can be consider as the model with high quality.
+
+As what we analysed before,no.325 is the most influential point since it is both high leverage point and outlier (largest Cook's Distance). Therefore,after deleting this point, MSE decreases.
+
+However,we still need to check whether the assumptions still satisfied for fit5(after deleting no.272,325) according to the component-plus-residual plots.
+
+```{r,echo=FALSE}
+crPlots(fit5,term=~log(Duration)+log(Amount)+I((log(Amount))^2)+log(Age))
+```
+
+According to the plots,I think these points can be deleted.Now fit5 is the best model.
+
+Then we need to elvaluate the quality of fit5:
+
+1)This model contains 15 covariances (including (log(Amount))^2 which is transformed from log(Amount)) 16 parameters.According to the summary of fit5, all the covariances  as well as factor variables are significant.
+
+2)The $R_{adj}^2$ of the fit5 is 0.7119.Larger $R_{adj}^2$ means the model is better.This value indicates that the regression model is generally good,although it still has some defects.
+
+3)We can draw a graph to compare the fitted values of fit5 with true values.
+
+```{r,echo=FALSE}
+plot(prediction5,TestResponses[,1],col="blue",xlab="fitted-value",ylab="true-value",main="fitted-value vs true-value for fit5")
+abline(0,1)
+```
+
+The black diagonal line in the plot above is the line that fitted-value(prediction)=true-value.Therefore, if most of the points are around the line and fit the trend of the line, the model perform generally well.In this case, the plot above indicates that fit5 is generally good though there are still some points are far away from the diagonal line.
+
+4)The next step is to calculate the predictive interval. If the most of true values of credict scores are in the predictive interval, the model could be considered as a good model.
+
+```{r,echo=FALSE}
+pred_int<-predict(fit5,newdata=select(TestData,-CreditScore),interval="prediction",level=0.95)
+list<-cbind(TestResponses,pred_int)
+names<-c("true_value","fitted_value","lower_bound","upper_bound")
+dimnames(list)=list(c(1:200),names)
+list
+lt<-data.frame(list)
+lt<-filter(lt,true_value>=lower_bound,true_value<=upper_bound)
+str(lt)
+```
+
+The data frame above shows that 189 out of 200 individual's credit scores are in the predictive interval.The rate is 94.5% which is very high.In the aspect,the model fit5 still seems good.However,the number of test individuals here is only 200 which is not too large.So it is not very accurate but can be used to make general judgment.
+
+From above four aspects, we can draw a conclusion that our best model fit5 can give good prediction,.Nevertheless, there are still some defects in this model such as there are still some predictions are obviously different from the true values and the number of the test individuals is not large enough.The data below is the prediction of fit5
+
+```{r,echo=FALSE}
+prediction5
+```
+
+Next we can compare fit5 with full model.Let's look at the summary of full model fit0 first.
+
+```{r,echo=FALSE}
+fit0<-lm(fit<-lm(CreditScore~.,data=NewData))
+summary(fit0)
+```
+
+1)There are 21 parameters and 20 covariables in full model fit0.Comparing with fit5(16 parameters and 15 covaribles), it is more complex. Moreover,not all coviaribles in full model is significant such as Existing and Job.
+
+2)The $R_{adj}^2$ of full model is 0.7095 and it of fit5 is 0.7119. $R_{adj}^2$ of fit5 is a little larger.
+
+3)Then we compare the MSE of fit0 with fit5
+
+```{r,echo=FALSE}
+prediction5<-predict(fit5,select(TestData,-CreditScore))
+fit5_mse<-sum((prediction5-TestResponses)^2)/200
+print(sprintf("fit5_mse=%f",fit5_mse))
+
+prediction0<-predict(fit0,select(TestData,-CreditScore))
+fit0_mse<-sum((prediction0-TestResponses)^2)/200
+print(sprintf("fit0_mse=%f",fit0_mse))
+```
+
+The MSE of fit5 is much lower than that of fit0, which means that fit5 ftts the data better.
+
+4)We can still draw a gragh comparing fitted-value and true value for fit0 and fit5(red for fit0 and blue for fit5)
+
+```{r,echo=FALSE}
+plot(prediction5,TestResponses[,1],col="blue",xlab="fitted-value",ylab="true-value",main="fitted-value vs true-value for fit5 and fit0")
+abline(0,1)
+points(prediction0,TestResponses[,1],col="red")
+
+```
+
+The plot above shows that the points of fit5 are generally closer to the diagonal than the points of fit0.It indicates that the predictions of fit5 are generally closer to the true-value,which means that the prediction of fit5 is better.
+
+5)Then we check how many individuals' true credict scores are in the predictive interval of the fit0.
+
+```{r,echo=FALSE}
+pred_int0<-predict(fit0,newdata=select(TestData,-CreditScore),interval="prediction",level=0.95)
+list<-cbind(TestResponses,pred_int0)
+names<-c("true_value","fitted_value","lower_bound","upper_bound")
+dimnames(list)=list(c(1:200),names)
+list
+lt<-data.frame(list)
+lt<-filter(lt,true_value>=lower_bound,true_value<=upper_bound)
+str(lt)
+```
+
+There are 190 out of 200 individuals' true credit scores are in the predictive interval of fit0.The rate is 95% which is very close to the rate of fit5. Hence, in this aspect, there is no too much difference between fit5 and fit0.However, since the number of the test individuals is not large enough, the accuracy of it is not very high.
+
+In general,the prediction of fit5 is better than full model fit0 according to the five aspect above.The best model is still fit5
+
+## Classify the individuals
+
+Now we need to classify the individuals from the TEST set into "bad" risks and "good" risks,using my best model fit5's predict credit scores. The bad risk means this individual has the credit score less than 500, otherwise it is good risk.Then we use the same rule to calssify the true credit scores and compare them with prediction.
+
+The first data set below is the risks classfied by predict credit scores and the next one is classfied by true predict credit scores.The individuals with bad risks show 1,otherwise show 0.
+
+```{r,echo=FALSE}
+risk_pre<-ifelse(prediction5<500,1,0)
+risk_true<-ifelse(TestResponses[,1]<500,1,0)
+risk_pre
+risk_true
+```
+
+Then we calculate how many individuals are correctly classified by my best model.
+
+```{r,echo=FALSE}
+sum(risk_pre==risk_true)
+```
+
+It shows that 173 out of 200 individuals are correctly classified by fit5 and the proportion is 86.5%. The proportion is acceptable but there are still 27 individuals are misclassified, which reflects that the model fit5 is not very perfect and exists flaw.
+
+## Summary
+
+The best model we finally get is fit5 which is
+fit2.CreditScore~status+log(Duration)+History+Purpose+log(Amount)+I((log(Amount))^2)+Savings+Disposable+Personal+OtherParties+log(Age)+Plans+Housing+Telephone+Foreign
+
+The data below is the coefficient of fit5.
+
+```{r,echo=FALSE}
+coef(fit5)
+```
+
+From the exploratory analysis, credict scores have negative relationship with the duration of requested loan in months(Duration) and amount requested in error(Amount) and have weekly positive relationship with the age. The model coefficient of log(Duration) and log(Age) is -28.62103552 and 17.87031695 which fit these relationships well.However the coefficient of log(Amount)  100.76084302 shows the positive relationship but not negative. There may be two reason of it. The first is the coefficient of I((log(Amount))^2) is -7.87564947 which is negative.The second may be that Amount is correlated with other variables such as Duration.From the scatter plot matrix in the exploratory analysis, Amount has positive relationship with Duration but Duration has negative relationship with CreditScore. These two factors may cause that the relationship between CreditScore and Amount is negative in exploratory analysis but the coefficient of log(Amount) in fit5 is positive.
+
+Then we focus on the factor variables.In exploratory analysis, we use the boxplot roughly concluding that only Disposable,Residence,Job,Dependents and Telephones are not effective and almost all other factors are effective.However,there are some defferences in model fit5 such as Telephone is significant and Existing is not correlated.One reason of it may be that we just use our eyes to observe boxplots to judge whether the factor variables are effective or not.It is not plausible.The other reason of it may still be that there is lots of correlation between these factor variables and continuous variables such as Foreign and Duration.
+
+In conclusion, the model fit5 is generally can make good prediction generally.But there are still some defects exist. To improve the model, we could pay more attention on the relationship between the variables except CreditScore. For example, we can add interactions in the model such as (Foreign*log(Duration)).There may be some other important variables that could affect credit score we did not consider like sex.More samples and some further tests may be needed to improve the accuration of the model.
+
